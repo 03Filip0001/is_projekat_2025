@@ -1,0 +1,10 @@
+# Da bi ste dodali neki paket u requirements potrebno je da svaki dodate u posebnoj liniji (ne pisati verziju paketa!)
+#
+# Primer:
+#
+# requests
+# streamlit
+# Sve sto je potrebno da uradite da bi ste dodali neki od gore 2 navedena paketa je da obrisete simbol za komentar #
+#
+# Dodaj tvoje pakete dole:
+######################################
