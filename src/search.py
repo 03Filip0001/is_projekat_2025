@@ -8,6 +8,8 @@ Vraća rečnik gde je ključ URL, a vrednost sirov tekst stranice. """
 from ddgs import DDGS
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+from langdetect import detect, DetectorFactory
 
 def web_search(_user_prompt: str, _results: int) -> dict:
     """
@@ -44,71 +46,105 @@ def web_search(_user_prompt: str, _results: int) -> dict:
                 
     return search_results
 
+# Postavljanje sed-a za langdetect radi konzistentnosti
+DetectorFactory.seed = 0
+
 def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     """
-    Poziva web_search, a zatim prečišćava tekst sa stranica uklanjajući
-    sadržaj koji nije relevantan za glavni tekst (reklame, navigacija, fusnote).
+    Pretražuje internet dok ne pronađe traženi broj validnih, pročišćenih
+    rezultata na srpskom jeziku, uklanjajući duplikate i irelevantne sajtove.
 
     Parametri:
     _user_prompt (str): Upit za pretragu.
-    _results (int): Broj rezultata koje treba vratiti.
+    _results (int): Broj validnih rezultata koje treba vratiti.
 
     Povratna vrednost:
     dict: Rečnik gde je ključ URL, a vrednost pročišćen tekst stranice.
     """
     prettified_results = {}
-    
-    # 1. Pretraga interneta (poziva se interna verzija web_search)
-    # Dodajemo lang:sr u upit za preciznije rezultate
-    search_query = f"{_user_prompt} lang:sr"
+    processed_domains = set()
+    total_found = 0
+    search_offset = 0  # Koristi se za pretragu u serijama
+
+    acceptable_languages = ['sr', 'hr'] #ove jezike prihvatam, u suprotnom mozda necu dobiti odg ni nakon 20 pretraga
+
+    # Lista domena koje treba ignorisati
+    ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com']
     
     with DDGS() as ddgs:
-        ddgs_results = ddgs.text(query=search_query, max_results=_results)
+        # Ponavljamo pretragu sve dok ne pronađemo traženi broj rezultata
+        while total_found < _results:
+            print(f"Tražim novu seriju rezultata (ukupno pronađeno: {total_found}/{_results})...")
+            
+            # Pretraga bez jezičkog filtera u upitu
+            ddgs_results = ddgs.text(query=_user_prompt, max_results=20, safesearch='off')
 
-        # Liste domena koje treba ignorisati
-        ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com']
-        
-        for result in ddgs_results:
-            url = result['href']
+            if not ddgs_results:
+                print("Nema više rezultata za pretragu. Prekidam.")
+                break
 
-            # Preskakanje URL-ova sa društvenih mreža
-            if any(domain in url for domain in ignored_domains):
-                print(f"Preskačem URL društvene mreže: {url}")
-                continue
+            for result in ddgs_results:
+                if total_found >= _results:
+                    break
 
-            try:
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                }
-                response = requests.get(url, headers=headers, timeout=5)
-
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    
-                    # 2. Prečišćavanje (prettify) sadržaja
-                    # Uklanjanje nepoželjnih elemenata
-                    for unwanted_tag in ['script', 'style', 'header', 'footer', 'nav', 'aside', 'form', 'img']:
-                        for tag in soup.find_all(unwanted_tag):
-                            tag.decompose()
-                    
-                    # Uklanjanje linkova
-                    for a_tag in soup.find_all('a'):
-                        a_tag.replace_with(a_tag.text)
-                    
-                    # Izdvajanje čistog teksta
-                    page_text = soup.get_text(separator=' ', strip=True)
-                    
-                    prettified_results[url] = page_text
-                else:
-                    print(f"Greška pri preuzimanju URL-a {url}: Status kod {response.status_code}")
-            except requests.exceptions.RequestException as e:
-                print(f"Greška pri preuzimanju URL-a {url}: {e}")
+                url = result['href']
                 
+                try:
+                    domain = urlparse(url).netloc
+                    if domain in processed_domains:
+                        print(f"Preskačem duplirani domen: {domain}")
+                        continue
+                except Exception as e:
+                    print(f"Greška pri parsiranju URL-a {url}: {e}")
+                    continue
+
+                if any(d in domain for d in ignored_domains):
+                    print(f"Preskačem URL društvene mreže: {url}")
+                    continue
+
+                try:
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                    response = requests.get(url, headers=headers, timeout=5)
+
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        
+                        for unwanted_tag in ['script', 'style', 'header', 'footer', 'nav', 'aside', 'form', 'img']:
+                            for tag in soup.find_all(unwanted_tag):
+                                tag.decompose()
+                        
+                        for a_tag in soup.find_all('a'):
+                            a_tag.replace_with(a_tag.text)
+                        
+                        page_text = soup.get_text(separator=' ', strip=True)
+
+                        if not page_text or len(page_text.split()) < 50:
+                            print(f"Preskačem URL {url} zbog premalog sadržaja.")
+                            continue
+
+                        # --- PROVERA JEZIKA ---
+                        detected_lang = detect(page_text)
+                        if detected_lang not in acceptable_languages:
+                            print(f"Preskačem URL {url} jer je jezik {detected_lang}")
+                            continue
+
+                        prettified_results[url] = page_text
+                        processed_domains.add(domain)
+                        total_found += 1
+                        print(f"Validan odgovor pronađen: {url}")
+                    else:
+                        print(f"Greška pri preuzimanju URL-a {url}: Status kod {response.status_code}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Greška pri preuzimanju URL-a {url}: {e}")
+    
     return prettified_results
+
 
 if __name__ == '__main__':
 # --- GLAVNI DEO PROGRAMA ---
-    user_question = "Šta je veštačka inteligencija lang:sr"
+    user_question = "Ko je Nikola Tesla lang:sr"
     number_of_results = 3
     file_name = "rezultati_pretrage.txt"
 
