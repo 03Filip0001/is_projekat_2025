@@ -8,3 +8,6 @@
 #
 # Dodaj tvoje pakete dole:
 ######################################
+duckduckgo_search
+requests
+bs4
