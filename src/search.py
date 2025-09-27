@@ -127,7 +127,8 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
                             continue
                         
                         # Uklanjanje nepoželjnih tagova unutar odabranog dela
-                        for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img']:
+                        # --- Proširena lista tagova za uklanjanje ---
+                        for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img', 'ul', 'li', 'span']:
                             for tag in content_to_parse.find_all(unwanted_tag): #i ovdje izbaciti error
                                 tag.decompose()
 
@@ -160,7 +161,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
 
 if __name__ == '__main__':
 # --- GLAVNI DEO PROGRAMA ---
-    user_question = "Ko je Nikola Tesla lang:sr"
+    user_question = "Koji je glavni grad Srbije"
     number_of_results = 3
     file_name = "rezultati_pretrage.txt"
 
