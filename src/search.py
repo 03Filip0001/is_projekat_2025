@@ -52,7 +52,7 @@ DetectorFactory.seed = 0
 def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     """
     Pretražuje internet dok ne pronađe traženi broj validnih, pročišćenih
-    rezultata na srpskom jeziku, uklanjajući duplikate i irelevantne sajtove.
+    rezultata, ciljajući glavni sadržaj stranice.
 
     Parametri:
     _user_prompt (str): Upit za pretragu.
@@ -64,19 +64,17 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     prettified_results = {}
     processed_domains = set()
     total_found = 0
-    search_offset = 0  # Koristi se za pretragu u serijama
-
-    acceptable_languages = ['sr', 'hr'] #ove jezike prihvatam, u suprotnom mozda necu dobiti odg ni nakon 20 pretraga
+    
+    # Dodajte sve željene jezike u ovu listu
+    acceptable_languages = ['sr', 'hr', 'bs']
 
     # Lista domena koje treba ignorisati
     ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com']
     
     with DDGS() as ddgs:
-        # Ponavljamo pretragu sve dok ne pronađemo traženi broj rezultata
         while total_found < _results:
             print(f"Tražim novu seriju rezultata (ukupno pronađeno: {total_found}/{_results})...")
             
-            # Pretraga bez jezičkog filtera u upitu
             ddgs_results = ddgs.text(query=_user_prompt, max_results=20, safesearch='off')
 
             if not ddgs_results:
@@ -111,20 +109,38 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
                         
-                        for unwanted_tag in ['script', 'style', 'header', 'footer', 'nav', 'aside', 'form', 'img']:
-                            for tag in soup.find_all(unwanted_tag):
-                                tag.decompose()
+                        # --- CILJANO PREUZIMANJE SADRŽAJA ---
+                        #ako stranica ne bude imala zeljeni content
+                        main_content = soup.find(id='content') or \
+                                       soup.find('main') or \
+                                       soup.find('div', class_='main') or \
+                                       soup.find('div', class_='article-body')
+
+                        if main_content:
+                            content_to_parse = main_content
+                        else:
+                            content_to_parse = soup.body
+
+                        # Provera da li content_to_parse postoji
+                        if not content_to_parse:
+                            print(f"Preskačem URL {url} jer ne mogu pronaći glavni sadržaj.")
+                            continue
                         
-                        for a_tag in soup.find_all('a'):
+                        # Uklanjanje nepoželjnih tagova unutar odabranog dela
+                        for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img']:
+                            for tag in content_to_parse.find_all(unwanted_tag): #i ovdje izbaciti error
+                                tag.decompose()
+
+                        # Uklanjanje linkova, ali zadržavanje teksta
+                        for a_tag in content_to_parse.find_all('a'):
                             a_tag.replace_with(a_tag.text)
                         
-                        page_text = soup.get_text(separator=' ', strip=True)
+                        page_text = content_to_parse.get_text(separator=' ', strip=True)
 
                         if not page_text or len(page_text.split()) < 50:
                             print(f"Preskačem URL {url} zbog premalog sadržaja.")
                             continue
 
-                        # --- PROVERA JEZIKA ---
                         detected_lang = detect(page_text)
                         if detected_lang not in acceptable_languages:
                             print(f"Preskačem URL {url} jer je jezik {detected_lang}")
