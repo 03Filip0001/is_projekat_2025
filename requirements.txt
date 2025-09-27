@@ -11,3 +11,4 @@
 ddgs
 requests
 bs4
+langdetect
