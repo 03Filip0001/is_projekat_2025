@@ -45,60 +45,52 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
         'nationalgeographic.com',
         'nasa.gov',
         'sr.wikipedia.org',
-        'rts.rs',
-        'tesla-duhovni-lik.rs'
+        'rts.rs'
     ]
     ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com']
     acceptable_languages = ['sr', 'hr', 'bs']
     
-    # 1. Pozivanje web_search za dobijanje sirovih rezultata
+    # 1. Dobijanje sirovih rezultata
     raw_results = web_search(_user_prompt, 70)
     
     if not raw_results:
         print("Nema rezultata pretrage.")
         return {}
-    
-    unprocessed_results = []
-    
-    # PRVA FAZA: Prioritizacija favorizovanih domena
+
+    # 2. Prioritizacija rezultata: favorizovani domeni na prvo mesto
+    raw_results.sort(key=lambda x: 1 if urlparse(x['href']).netloc in favored_domains else 2)
+
+    # 3. Ujedinjena petlja za obradu i uklanjanje duplikata
     for result in raw_results:
-        url = result['href']
-        try:
-            domain = urlparse(url).netloc
-            if domain in favored_domains:
-                if domain not in processed_domains:
-                    text = _process_single_url(url, _user_prompt, acceptable_languages, ignored_domains)
-                    if text:
-                        prettified_results[url] = text
-                        processed_domains.add(domain)
-                        print(f"Pronađen favorizovani odgovor: {url}")
-                        if len(prettified_results) >= _results:
-                            return prettified_results
-            else:
-                unprocessed_results.append(result)
-        except Exception as e:
-            print(f"Greška pri parsiranju URL-a {url}: {e}")
-            
-    # DRUGA FAZA: Obrada preostalih rezultata
-    print("Prioritetna pretraga završena. Nastavljam sa standardnom pretragom.")
-    for result in unprocessed_results:
-        if len(prettified_results) >= _results:
+        if total_found >= _results:
             break
         
         url = result['href']
+        
         try:
             domain = urlparse(url).netloc
-            if domain in processed_domains:
-                continue
-
-            text = _process_single_url(url, _user_prompt, acceptable_languages, ignored_domains)
-            if text:
-                prettified_results[url] = text
-                processed_domains.add(domain)
-                print(f"Pronađen standardni odgovor: {url}")
         except Exception as e:
             print(f"Greška pri parsiranju URL-a {url}: {e}")
-    
+            continue
+
+        # Provera da li je domen već obrađen
+        if domain in processed_domains:
+            print(f"Preskačem duplirani domen: {domain}")
+            continue
+            
+        # Provera da li je URL sa ignorisane liste
+        if any(d in domain for d in ignored_domains):
+            print(f"Preskačem URL društvene mreže: {url}")
+            continue
+
+        text = _process_single_url(url, _user_prompt, acceptable_languages, ignored_domains)
+        
+        if text:
+            prettified_results[url] = text
+            processed_domains.add(domain)
+            total_found += 1
+            print(f"Validan odgovor pronađen: {url}")
+            
     return prettified_results
 
 def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, ignored_domains: list):
@@ -181,7 +173,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
 
 if __name__ == '__main__':
 
-    user_question = "Kada je počeo Prvi svetski rat"
+    user_question = "Ko je Nikola Tesla?"
     number_of_results = 3
     file_name = "rezultati_pretrage.txt"
 
