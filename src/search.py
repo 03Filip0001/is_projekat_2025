@@ -47,7 +47,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
         'sr.wikipedia.org',
         'rts.rs'
     ]
-    ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com']
+    ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com', 'pinterest.com', 'reddit.com', 'informer.rs']
     acceptable_languages = ['sr', 'hr', 'bs']
     
     # 1. Dobijanje sirovih rezultata
@@ -140,7 +140,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
 
             # Ako nismo pronašli specifičan kontejner, vraćamo se na staru metodu
             if not relevant_text:
-                for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img', 'ul', 'li', 'span']:
+                for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img', 'ul', 'li', 'span', 'iframe', 'ins']:
                     for tag in content_to_parse.find_all(unwanted_tag):
                         tag.decompose()
                 
@@ -173,7 +173,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
 
 if __name__ == '__main__':
 
-    user_question = "Ko je Nikola Tesla?"
+    user_question = "Ko je osmislio 'Teoriju relativiteta' ?"
     number_of_results = 3
     file_name = "rezultati_pretrage.txt"
 
