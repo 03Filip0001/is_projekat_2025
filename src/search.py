@@ -38,16 +38,24 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     processed_domains = set()
     total_found = 0
     
-    # Podaci za filtriranje
+    # Izvori pouzdanih informacija
     favored_domains = [
         'wikipedia.org',
         'britannica.com',
         'nationalgeographic.com',
         'nasa.gov',
         'sr.wikipedia.org',
-        'rts.rs'
-    ]
-    ignored_domains = ['instagram.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com', 'pinterest.com', 'reddit.com', 'informer.rs']
+        'rts.rs']
+    
+    ignored_domains = [
+        'instagram.com', 
+        'facebook.com', 
+        'linkedin.com',                
+        'twitter.com', 
+        'youtube.com', 
+        'pinterest.com', 
+        'reddit.com', 
+        'informer.rs']
     acceptable_languages = ['sr', 'hr', 'bs']
     
     # 1. Dobijanje sirovih rezultata
