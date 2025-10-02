@@ -8,3 +8,6 @@
 #
 # Dodaj tvoje pakete dole:
 ######################################
+sentence_transformers
+faiss
+numpy
