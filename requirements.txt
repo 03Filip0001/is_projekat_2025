@@ -8,3 +8,4 @@
 #
 # Dodaj tvoje pakete dole:
 ######################################
+streamlit
