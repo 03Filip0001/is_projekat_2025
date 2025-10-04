@@ -56,7 +56,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
         'pinterest.com', 
         'reddit.com', 
         'informer.rs']
-    acceptable_languages = ['sr', 'hr', 'bs']
+    acceptable_languages = ['sr', 'hr', 'bs', 'en']
     
     # 1. Dobijanje sirovih rezultata
     raw_results = web_search(_user_prompt, 70)
