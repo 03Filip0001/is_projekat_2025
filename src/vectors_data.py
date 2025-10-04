@@ -86,22 +86,29 @@ def vectors_search(query, data, k):
     k (int): Broj najsličnijih rezultata koje treba vratiti.
 
     Povratna vrednost:
-    List: Lista tuplova (distances, indices) sa rezultatima pretrage za svaki URL.
+    dict: url : najrelevatniji tekst
     """
-    results_list = []
+    results_list = {}
     
     for url, vectors_data in data.items():
         model = vectors_data['model']
-        index = vectors_data['vectors']
+        chunk = vectors_data['chunk_text']
+        vector = vectors_data['vectors']
         
         # Vektorizacija korisničkog upita
         query_embedding = model.encode([query]).astype("float32")
         
         # Pretraga u FAISS indeksu
-        distances, indices = index.search(query_embedding, k)
+        distances, indices = vector.search(query_embedding, k)
         
+        text_list=[]
+        for index in indices:
+            text_list.append(chunk[index])
+
         # Dodavanje rezultata u listu kao tuplove
-        results_list.append((distances, indices))
+        results_list[url]={
+            text_list
+        }
             
     return results_list
 

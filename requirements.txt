@@ -9,5 +9,5 @@
 # Dodaj tvoje pakete dole:
 ######################################
 sentence_transformers
-faiss
+faiss-cpu
 numpy
