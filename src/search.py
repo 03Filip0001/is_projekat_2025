@@ -134,17 +134,17 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
             for tag in content_to_parse.find_all(['h1', 'h2', 'h3', 'p']):
                 tag_text = tag.get_text(strip=True).lower()
                 
-                # Proveravamo da li tekst taga sadrži ključne reči iz upita
-                if any(keyword in tag_text for keyword in prompt_keywords):
-                    # Ako pronađemo podudaranje, uzimamo tekst iz tog taga i njegovog roditelja
-                    relevant_container = tag.find_parent('div') or tag.find_parent('article') or tag.find_parent('section')
-                    if relevant_container:
-                        content_to_parse = relevant_container
-                        break # Izlazimo iz petlje nakon pronalaska relevantnog kontejnera
-                    else:
-                        # Ako ne nađemo roditelja, uzimamo samo tekst iz pronađenog taga
-                        relevant_text = tag.get_text(strip=True)
-                        break
+                # # Proveravamo da li tekst taga sadrži ključne reči iz upita
+                # if any(keyword in tag_text for keyword in prompt_keywords):
+                #     # Ako pronađemo podudaranje, uzimamo tekst iz tog taga i njegovog roditelja
+                #     relevant_container = tag.find_parent('div') or tag.find_parent('article') or tag.find_parent('section')
+                #     if relevant_container:
+                #         content_to_parse = relevant_container
+                #         break # Izlazimo iz petlje nakon pronalaska relevantnog kontejnera
+                #     else:
+                #         # Ako ne nađemo roditelja, uzimamo samo tekst iz pronađenog taga
+                #         relevant_text = tag.get_text(strip=True)
+                #         break
 
             # Ako nismo pronašli specifičan kontejner, vraćamo se na staru metodu
             if not relevant_text:
