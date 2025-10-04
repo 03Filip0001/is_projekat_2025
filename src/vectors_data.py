@@ -22,12 +22,12 @@ def setup_vectors(prettified_results):
         if not text:
             continue
         
-        # Konfiguracija za FAISS indeks
-        nlist = 35  # Broj klastera (lista) na koje se deli baza
-        nprobe = 5  # Broj klastera koji se pretražuju, trazi najblizih 5 centroida
-        
         # Deljenje teksta na čankove 
         chunks = chunk_text(text, 400) #eksperimentisi sa ovom vrednoscu
+
+        # Konfiguracija za FAISS indeks
+        nlist = min(35, len(chunks))  # Broj klastera (lista) na koje se deli baza
+        nprobe = 5  # Broj klastera koji se pretražuju, trazi najblizih 5 centroida
 
         # Kreiranje vektora (embeddings) za svaki čank
         embeddings = model.encode(chunks)
@@ -102,13 +102,13 @@ def vectors_search(query, data, k):
         distances, indices = vector.search(query_embedding, k)
         
         text_list=[]
-        for index in indices:
-            text_list.append(chunk[index])
+        for idx in indices[0]:  # jer indices ima oblik (1, k)
+            if idx < len(chunk):  # sigurnosna provera
+                text_list.append(chunk[idx])
 
         # Dodavanje rezultata u listu kao tuplove
-        results_list[url]={
-            text_list
-        }
+        results_list[url] = text_list
+        
             
     return results_list
 
