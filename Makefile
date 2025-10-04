@@ -1,5 +1,5 @@
 VENV := .venv
-PYTHON := $(VENV)/Scripts/python
+PYTHON := $(VENV)\Scripts\python
 
 ifeq ($(OS), Windows_NT)
 	CREATE_VENV := if not exist $(VENV) (python -m venv $(VENV))
@@ -34,4 +34,4 @@ venv:
 	if not exist $(VENV) (python -m venv $(VENV))
 
 run: requirements
-	$(PYTHON) main.py
+	$(PYTHON) src/main.py

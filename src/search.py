@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from langdetect import detect, DetectorFactory
+from config import *
 
 def web_search(_user_prompt: str, _results: int) -> dict:
     """
@@ -59,7 +60,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     acceptable_languages = ['sr', 'hr', 'bs']
     
     # 1. Dobijanje sirovih rezultata
-    raw_results = web_search(_user_prompt, 70)
+    raw_results = web_search(_user_prompt, WEB_SEARCH_MAX_RESULTS)
     
     if not raw_results:
         print("Nema rezultata pretrage.")
@@ -134,17 +135,17 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
             for tag in content_to_parse.find_all(['h1', 'h2', 'h3', 'p']):
                 tag_text = tag.get_text(strip=True).lower()
                 
-                # Proveravamo da li tekst taga sadrži ključne reči iz upita
-                if any(keyword in tag_text for keyword in prompt_keywords):
-                    # Ako pronađemo podudaranje, uzimamo tekst iz tog taga i njegovog roditelja
-                    relevant_container = tag.find_parent('div') or tag.find_parent('article') or tag.find_parent('section')
-                    if relevant_container:
-                        content_to_parse = relevant_container
-                        break # Izlazimo iz petlje nakon pronalaska relevantnog kontejnera
-                    else:
-                        # Ako ne nađemo roditelja, uzimamo samo tekst iz pronađenog taga
-                        relevant_text = tag.get_text(strip=True)
-                        break
+                # # Proveravamo da li tekst taga sadrži ključne reči iz upita
+                # if any(keyword in tag_text for keyword in prompt_keywords):
+                #     # Ako pronađemo podudaranje, uzimamo tekst iz tog taga i njegovog roditelja
+                #     relevant_container = tag.find_parent('div') or tag.find_parent('article') or tag.find_parent('section')
+                #     if relevant_container:
+                #         content_to_parse = relevant_container
+                #         break # Izlazimo iz petlje nakon pronalaska relevantnog kontejnera
+                #     else:
+                #         # Ako ne nađemo roditelja, uzimamo samo tekst iz pronađenog taga
+                #         relevant_text = tag.get_text(strip=True)
+                #         break
 
             # Ako nismo pronašli specifičan kontejner, vraćamo se na staru metodu
             if not relevant_text:
@@ -157,7 +158,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
                 
                 page_text = content_to_parse.get_text(separator=' ', strip=True)
 
-                if not page_text or len(page_text.split()) < 50:
+                if not page_text or len(page_text.split()) < PAGE_TEXT_MIN_WORDS:
                     print(f"Preskačem URL {url} zbog premalog sadržaja.")
                     return None
                 
@@ -181,7 +182,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
 
 if __name__ == '__main__':
 
-    user_question = "Ko je osmislio 'Teoriju relativiteta' ?"
+    user_question = "Ko je Niko Tesla ?"
     number_of_results = 3
     file_name = "rezultati_pretrage.txt"
 
