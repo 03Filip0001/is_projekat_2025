@@ -25,7 +25,7 @@ def prompt_llm(user_prompt=None, context_text=None, api_key=None):
 	context = "\n".join(context_text)
 	final_prompt = dedent(f"""
 	You are a helpful assistant. Use the following context to answer the question.
-	Answer based on context. Answer on Serbian.
+	Answer based on context. Answer based on language asked.
 
 	Context:
 	{context}
