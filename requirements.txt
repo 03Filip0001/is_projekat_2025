@@ -9,3 +9,7 @@
 # Dodaj tvoje pakete dole:
 ######################################
 streamlit
+ddgs
+requests
+bs4
+langdetect
