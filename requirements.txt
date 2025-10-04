@@ -13,3 +13,6 @@ ddgs
 requests
 bs4
 langdetect
+sentence_transformers
+faiss
+numpy
