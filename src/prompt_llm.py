@@ -17,15 +17,15 @@ def prompt_llm(user_prompt=None, context_text=None, api_key=None):
 	if api_key is None:
 		raise ValueError("Please provide API_KEY for GEMINI")
 	
-	if user_prompt is None or context_text is None:
+	if (user_prompt is None) or (context_text is None):
 		raise ValueError("Provide user_prompt and context_text")
 
 	client = genai.Client(api_key=api_key)
 
-	context = "\n".join(context_text)
+	context = "\n" + context_text
 	final_prompt = dedent(f"""
 	You are a helpful assistant. Use the following context to answer the question.
-	Answer based on context. Answer based on language asked.
+	Answer only based on context. Use English or Serbian for your answer.
 
 	Context:
 	{context}

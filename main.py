@@ -79,13 +79,20 @@ def app():
 
         vectors = setup_vectors(context)
         url_text = vectors_search(query=user_question, data=vectors, k=WEB_SEARCH_VALID_URLS_NUM)
+        
+        with open("testing/debug.txt", "w",encoding="utf-8") as f:
+            f.write(str(url_text))
         text = ""
-
         for url, tx in url_text.items():
             for t in tx:
-                text.join("\n\n"+ t)
+                text += "\n\n" + t
 
         answer = prompt_llm(user_prompt=user_question, context_text=text, api_key=LLM_API_KEY)
+        answer += "\n\n"
+        answer += "<h3>Izvori: </h3>\n\n"
+
+        for url, _ in url_text.items():
+            answer += url + "\n\n"
         # answer = "test"
         st.markdown(f"""
             <div style='background-color: rgba(255,255,255,0.15); padding: 20px; border-radius: 10px;
