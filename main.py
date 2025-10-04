@@ -1,10 +1,12 @@
 import streamlit as st
-from dotenv import load_dotenv
-from src.search import *
-from src.vectors_data import *
+
+from config import *
+from src.prompt_llm import prompt_llm
+from src.search import _web_search_prettify_
+from src.vectors_data import setup_vectors, vectors_search
 
 def app():
-    load_dotenv()
+    
 
     st.markdown(
     """
@@ -70,9 +72,21 @@ def app():
     # Output box
     st.markdown("<h3>💬 <span style='color: #FFFFFF;'>Odgovor:</span></h3>", unsafe_allow_html=True)
 
-    if st.session_state.user_question.strip():
+    if len(st.session_state.user_question) and st.session_state.user_question.strip():
         # ovde ide tvoj stvarni odgovor (npr. poziv modela)
-        answer = "automatski odgovor"
+        
+        context = _web_search_prettify_(_user_prompt=user_question, _results=WEB_SEARCH_VALID_URLS_NUM)
+
+        vectors = setup_vectors(context)
+        url_text = vectors_search(query=user_question, data=vectors, k=WEB_SEARCH_VALID_URLS_NUM)
+        text = ""
+
+        for url, tx in url_text.items():
+            for t in tx:
+                text.join("\n\n"+ t)
+
+        answer = prompt_llm(user_prompt=user_question, context_text=text, api_key=LLM_API_KEY)
+        # answer = "test"
         st.markdown(f"""
             <div style='background-color: rgba(255,255,255,0.15); padding: 20px; border-radius: 10px;
                         box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 10px;'>
