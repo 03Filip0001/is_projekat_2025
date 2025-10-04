@@ -8,3 +8,5 @@
 #
 # Dodaj tvoje pakete dole:
 ######################################
+google-genai
+python-dotenv
