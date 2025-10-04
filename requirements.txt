@@ -16,3 +16,5 @@ langdetect
 sentence_transformers
 faiss
 numpy
+google-genai
+python-dotenv
