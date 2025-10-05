@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from langdetect import detect, DetectorFactory
+from config import *
 
 def web_search(_user_prompt: str, _results: int) -> dict:
     """
@@ -59,7 +60,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
     acceptable_languages = ['sr', 'hr', 'bs', 'en']
     
     # 1. Dobijanje sirovih rezultata
-    raw_results = web_search(_user_prompt, 70)
+    raw_results = web_search(_user_prompt, WEB_SEARCH_MAX_URLS)
     
     if not raw_results:
         print("Nema rezultata pretrage.")
@@ -157,7 +158,7 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
                 
                 page_text = content_to_parse.get_text(separator=' ', strip=True)
 
-                if not page_text or len(page_text.split()) < 50:
+                if not page_text or len(page_text.split()) < MIN_PAGE_CONTEXT_LENGTH:
                     print(f"Preskačem URL {url} zbog premalog sadržaja.")
                     return None
                 

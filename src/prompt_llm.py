@@ -23,16 +23,25 @@ def prompt_llm(user_prompt=None, context_text=None, api_key=None):
 	client = genai.Client(api_key=api_key)
 
 	context = "\n" + context_text
+	from textwrap import dedent
+
 	final_prompt = dedent(f"""
-	You are a helpful assistant. Use the following context to answer the question.
-	Answer only based on context. Use English or Serbian for your answer.
+		You are an expert AI assistant tasked with answering questions based on a provided text.
 
-	Context:
-	{context}
+		Your instructions are:
+		- Your response must be based exclusively on the information found in the 'Context' below. Do not use any external knowledge.
+		- If the context does not contain the necessary information to answer the question, state that the information is not available in the provided text.
+		- Formulate a natural-sounding answer of at least two sentences.
+		- Write your answer in the same language as the 'Question' (which will be either English or Serbian).
+		- Do not mention the context in your answer (e.g., avoid phrases like "According to the context...").
 
-	Question: {user_prompt}
-	Answer:
-	""")
+		Context:
+		{context}
+
+		Question: {user_prompt}
+		Answer:
+		""")
+
 
 	# final_prompt = dedent(f"{user_prompt}")
 
