@@ -31,7 +31,7 @@ def prompt_llm(user_prompt=None, context_text=None, api_key=None):
 		Your instructions are:
 		- Your response must be based exclusively on the information found in the 'Context' below. Do not use any external knowledge.
 		- If the context does not contain the necessary information to answer the question, state that the information is not available in the provided text.
-		- Formulate a natural-sounding answer of at least two sentences.
+		- Formulate a natural-sounding answer.
 		- Write your answer in the same language as the 'Question' (which will be either English or Serbian).
 		- Do not mention the context in your answer (e.g., avoid phrases like "According to the context...").
 

@@ -80,6 +80,7 @@ def app():
         vectors = setup_vectors(context)
         url_text = vectors_search(query=user_question, data=vectors, k=WEB_SEARCH_VALID_URLS_NUM)
         
+        os.makedirs(os.path.dirname("testing/debug.txt"), exist_ok=True)
         with open("testing/debug.txt", "w",encoding="utf-8") as f:
             f.write(str(url_text))
         text = ""
