@@ -4,12 +4,13 @@ import numpy as np
 import re
 
 #vektorise tekst
-def setup_vectors(prettified_results): 
+def setup_vectors(prettified_results):
     """
-    Vektorizuje tekstove iz datog rečnika i priprema ih za pretragu.
+    Vektorizuje tekstove iz datog rečnika i priprema ih za pretragu,
+    automatski birajući optimalan FAISS indeks na osnovu veličine teksta.
 
     Parametri:
-    data (dict): Rečnik url : text koji vraca fja _web_search_prettify_
+    prettified_results (dict): Rečnik url : text.
 
     Povratna vrednost:
     dict: Rečnik sa URL-ovima kao ključevima i listom objekata koji sadrže
@@ -17,35 +18,43 @@ def setup_vectors(prettified_results):
     """
     model = SentenceTransformer('all-MiniLM-L6-v2')
     results = {}
+    
+    # Granica za prebacivanje na IndexIVFFlat
+    # Za manje od 100 čankova, IndexFlatL2 je brži i precizniji
+    threshold = 100 
 
     for url, text in prettified_results.items():
         if not text:
             continue
         
         # Deljenje teksta na čankove 
-        chunks = chunk_text(text, 400) #eksperimentisi sa ovom vrednoscu
-
-        # Konfiguracija za FAISS indeks
-        nlist = min(35, len(chunks))  # Broj klastera (lista) na koje se deli baza
-        nprobe = 5  # Broj klastera koji se pretražuju, trazi najblizih 5 centroida
+        chunks = chunk_text(text, 400) 
 
         # Kreiranje vektora (embeddings) za svaki čank
-        embeddings = model.encode(chunks)
-        
-        # Stvaranje FAISS indeksa za efikasnu pretragu
+        embeddings = model.encode(chunks, convert_to_numpy=True)
         dimension = embeddings.shape[1]
-        quantizer = faiss.IndexFlatL2(dimension)  # Baza za klasterizaciju
-        index = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_L2)
-        
-        # Obuka indeksa (neophodno pre dodavanja vektora)
-        if index.is_trained == False:
-            index.train(embeddings.astype('float32'))
-        
-        index.add(embeddings.astype('float32'))
-        
-        # Postavljanje nprobe parametra za pretragu
-        index.nprobe = nprobe
-        
+
+        # Automatski biramo FAISS indeks
+        if len(chunks) < threshold:
+            # Za manje skupove, IndexFlatL2 je optimalan
+            # Brz je, ne zahteva trening i pruža 100% preciznost
+            index = faiss.IndexFlatL2(dimension)
+            index.add(embeddings)
+            print(f"URL: {url} -> Korišćen IndexFlatL2")
+        else:
+            # Za veće skupove, koristimo klasterovanje
+            nlist = min(35, len(chunks)) 
+            nprobe = 5
+            
+            quantizer = faiss.IndexFlatL2(dimension)
+            index = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_L2)
+            
+            # Treniranje indeksa je neophodno za IVF
+            index.train(embeddings)
+            index.add(embeddings)
+            index.nprobe = nprobe
+            print(f"URL: {url} -> Korišćen IndexIVFFlat")
+
         # Dodavanje u rečnik rezultata
         results[url] = {
             'model': model,

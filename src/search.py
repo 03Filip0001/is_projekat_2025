@@ -17,7 +17,7 @@ def web_search(_user_prompt: str, _results: int) -> dict:
     list: Lista sirovih rezultata pretrage.
     """
     with DDGS() as ddgs:
-        ddgs_results = ddgs.text(query=_user_prompt, max_results=_results, safesearch='off')
+        ddgs_results = ddgs.text(query=_user_prompt, max_results=_results, safesearch='on')
         return ddgs_results
 
 # Postavljanje sed-a za langdetect radi konzistentnosti
@@ -49,6 +49,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
         'rts.rs']
     
     ignored_domains = [
+        'en.wikipedia.org'
         'instagram.com', 
         'facebook.com', 
         'linkedin.com',                
@@ -57,7 +58,7 @@ def _web_search_prettify_(_user_prompt: str, _results: int) -> dict:
         'pinterest.com', 
         'reddit.com', 
         'informer.rs']
-    acceptable_languages = ['sr', 'hr', 'bs', 'en']
+    acceptable_languages = ['sr', 'hr', 'bs']
     
     # 1. Dobijanje sirovih rezultata
     raw_results = web_search(_user_prompt, WEB_SEARCH_MAX_URLS)
@@ -128,34 +129,26 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
                 return None
 
             # --- NOVO: Pametnije preuzimanje teksta ---
-            relevant_text = ""
+            relevant_text_parts = []
             prompt_keywords = set(user_prompt.lower().split())
 
-            # Tražimo naslove i paragrafe unutar glavnog kontejnera
             for tag in content_to_parse.find_all(['h1', 'h2', 'h3', 'p']):
-                tag_text = tag.get_text(strip=True).lower()
+                tag_text = tag.get_text(strip=True)
+                # Optional: Check if the tag text contains any of the user's keywords
+                #if any(keyword in tag_text.lower() for keyword in prompt_keywords):
+                relevant_text_parts.append(tag_text)
                 
-                # # Proveravamo da li tekst taga sadrži ključne reči iz upita
-                # if any(keyword in tag_text for keyword in prompt_keywords):
-                #     # Ako pronađemo podudaranje, uzimamo tekst iz tog taga i njegovog roditelja
-                #     relevant_container = tag.find_parent('div') or tag.find_parent('article') or tag.find_parent('section')
-                #     if relevant_container:
-                #         content_to_parse = relevant_container
-                #         break # Izlazimo iz petlje nakon pronalaska relevantnog kontejnera
-                #     else:
-                #         # Ako ne nađemo roditelja, uzimamo samo tekst iz pronađenog taga
-                #         relevant_text = tag.get_text(strip=True)
-                #         break
+            relevant_text = " ".join(relevant_text_parts)
 
-            # Ako nismo pronašli specifičan kontejner, vraćamo se na staru metodu
             if not relevant_text:
+                # Fallback method: clean and get all text
                 for unwanted_tag in ['script', 'style', 'nav', 'aside', 'footer', 'form', 'img', 'ul', 'li', 'span', 'iframe', 'ins']:
                     for tag in content_to_parse.find_all(unwanted_tag):
                         tag.decompose()
-                
+                        
                 for a_tag in content_to_parse.find_all('a'):
                     a_tag.replace_with(a_tag.text)
-                
+                    
                 page_text = content_to_parse.get_text(separator=' ', strip=True)
 
                 if not page_text or len(page_text.split()) < MIN_PAGE_CONTEXT_LENGTH:
@@ -167,9 +160,9 @@ def _process_single_url(url: str, user_prompt: str, acceptable_languages: list, 
                     print(f"Preskačem URL {url} jer je jezik {detected_lang}")
                     return None
 
-                return page_text
+                return page_text # Return the fallback text if the main content isn't found
             else:
-                return relevant_text
+                return relevant_text # Return the relevant text if found
 
         else:
             print(f"Greška pri preuzimanju URL-a {url}: Status kod {response.status_code}")
