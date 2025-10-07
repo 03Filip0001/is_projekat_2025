@@ -49,5 +49,4 @@ def prompt_llm(user_prompt=None, context_text=None, api_key=None):
 			model="gemini-2.5-pro",
 			contents=final_prompt
 		)
-	print(response)
 	return response.text
