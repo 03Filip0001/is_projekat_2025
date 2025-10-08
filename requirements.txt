@@ -12,3 +12,6 @@ ddgs
 requests
 bs4
 langdetect
+sentence-transformers
+faiss-cpu
+numpy
